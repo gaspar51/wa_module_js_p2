@@ -1,53 +1,117 @@
-const displayedImage = document.querySelector('.displayed-img');
-const thumbBar = document.querySelector('.thumb-bar');
+// set up canvas
+const canvas = document.querySelector('canvas');
+const ctx = canvas.getContext('2d');
 
-const btn = document.querySelector('button');
-const overlay = document.querySelector('.overlay');
+const width = canvas.width = window.innerWidth;
+const height = canvas.height = window.innerHeight;
 
-const images = ['pic1.jpg', `pic2.jpg`, `pic3.jpg`, `pic4.jpg`, `pic5.jpg`];
-const alts = {
-  'pic1.jpg' : 'Closeup of a human eye',
-  'pic2.jpg' : 'Rock that looks like a wave',
-  'pic3.jpg' : 'Purple and white pansies',
-  'pic4.jpg' : 'Section of wall from a pharoah\'s tomb',
-  'pic5.jpg' : 'Large moth on a leaf'
+//dfine color balls
+const colorPicker = document.getElementById('colorPicker');
+
+// function to generate random number
+function random(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Função para remover a classe 'selected' de todas as imagens
-function clearSelection() {
-  const thumbnailImages = thumbBar.querySelectorAll('img');
-  thumbnailImages.forEach(image => {
-    image.classList.remove('selected');
-  });
+// function to generate random RGB color value
+function atualizarCorSelecionada() {
+    colorPicker.addEventListener('input', () => {
+        colorPicker.value;
+    })
 }
 
-for (const image of images) {
-  const newImage = document.createElement('img');
-  newImage.setAttribute('src', `images/${image}`);
-  newImage.setAttribute('alt', alts[image]);
-  thumbBar.appendChild(newImage);
-  
-  newImage.addEventListener('click', e => {
-    displayedImage.src = e.target.src;
-    displayedImage.alt = e.target.alt;
-
-    // Remove a classe 'selected' de todas as imagens
-    clearSelection();
-    
-    // Adicione a classe 'selected' à imagem selecionada
-    e.target.classList.add('selected');
-  });
+function randomRGB() {
+  return `rgb(${random(0, 255)},${random(0, 255)},${random(0, 255)})`;
 }
 
-btn.addEventListener('click', () => {
-  const btnClass = btn.getAttribute('class');
-  if (btnClass === 'dark') {
-    btn.setAttribute('class','light');
-    btn.textContent = 'Lighten';
-    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-  } else {
-    btn.setAttribute('class','dark');
-    btn.textContent = 'Darken';
-    overlay.style.backgroundColor = 'rgba(0,0,0,0)';
-  }
-});
+class Ball {
+
+   constructor(x, y, velX, velY, color, size) {
+      this.x = x;
+      this.y = y;
+      this.velX = velX;
+      this.velY = velY;
+      this.color = color;
+      this.size = size;
+   }
+
+   draw() {
+      ctx.beginPath();
+      ctx.fillStyle = this.color;
+      ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+      ctx.fill();
+   }
+
+   update() {
+      if ((this.x + this.size) >= width) {
+         this.velX = -(Math.abs(this.velX));
+      }
+
+      if ((this.x - this.size) <= 0) {
+         this.velX = Math.abs(this.velX);
+      }
+
+      if ((this.y + this.size) >= height) {
+         this.velY = -(Math.abs(this.velY));
+      }
+
+      if ((this.y - this.size) <= 0) {
+         this.velY = Math.abs(this.velY);
+      }
+
+      this.x += this.velX;
+      this.y += this.velY;
+   }
+
+   collisionDetect() {
+      for (const ball of balls) {
+         if (!(this === ball)) {
+            const dx = this.x - ball.x;
+            const dy = this.y - ball.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < this.size + ball.size) {
+            
+                colorPicker.addEventListener('input', () => {
+                    const selectedColor = colorPicker.value;
+                    ball.color = this.color = selectedColor;
+                })
+            }
+         }
+      }
+   }
+
+}
+
+const balls = [];
+
+while (balls.length < 25) {
+   const size = random(10,20);
+   const ball = new Ball(
+      // ball position always drawn at least one ball width
+      // away from the edge of the canvas, to avoid drawing errors
+      random(0 + size,width - size),
+      random(0 + size,height - size),
+      random(-7,7),
+      random(-7,7),
+      randomRGB(),
+      size
+   );
+
+  balls.push(ball);
+}
+
+function loop() {
+   ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+   ctx.fillRect(0, 0,  width, height);
+
+   for (const ball of balls) {
+     ball.draw();
+     ball.update();
+     ball.collisionDetect();
+   }
+
+   requestAnimationFrame(loop);
+}
+
+loop();
